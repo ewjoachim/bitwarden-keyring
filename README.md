@@ -1,6 +1,11 @@
 # Bitwarden Keyring
 
 [![Build Status](https://travis-ci.org/ewjoachim/bitwarden-keyring.svg?branch=master)](https://travis-ci.org/ewjoachim/bitwarden-keyring)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI version](https://badge.fury.io/py/bitwarden-keyring.svg)](https://badge.fury.io/py/bitwarden-keyring)
+[![codecov](https://codecov.io/gh/ewjoachim/bitwarden-keyring/branch/master/graph/badge.svg)](https://codecov.io/gh/ewjoachim/bitwarden-keyring)
+
+
 
 Implementation of the [Keyring](https://pypi.org/project/keyring/) backend code reading secrets from [Bitwarden](https://bitwarden.com) using [Bitwarden-cli](https://help.bitwarden.com/article/cli/)
 

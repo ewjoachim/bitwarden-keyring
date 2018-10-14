@@ -1,5 +1,7 @@
 # Bitwarden Keyring
 
+[![Build Status](https://travis-ci.org/ewjoachim/bitwarden-keyring.svg?branch=master)](https://travis-ci.org/ewjoachim/bitwarden-keyring)
+
 Implementation of the [Keyring](https://pypi.org/project/keyring/) backend code reading secrets from [Bitwarden](https://bitwarden.com) using [Bitwarden-cli](https://help.bitwarden.com/article/cli/)
 
 ## Overview

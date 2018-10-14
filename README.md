@@ -62,6 +62,25 @@ The Python packaging ecosystem can be quite a mess.
 
 Because of this, it's likely that your setup and my setup are nothing alike. Keyring [supports](https://pypi.org/project/keyring/#config-file-content) a configuration file with an option allowing to explicitely define the path to a backend. You may need that for your installation, or maybe not.
 
+## Usage
+
+Use as a normal keyring backend. It is installed with priority 10 so it's likely going to be selected
+first.
+
+If you want to use it with [twine](https://pypi.org/project/twine/), good news, you're already set. Just make sure that this package is installed in the same location as twine.
+
+`bitwarden-keyring` will automatically ask for credentials when needed. If you don't want to unlock your vault every time, export the vault session to your environment (use `bw unlock` and follow the instructions, or launch `export BW_SESSION=$(bw unlock --raw)`).
+
+## Caveats
+
+`bitwarden-keyring` will try to select an appropriate credential based on the given service name, but as of now, it can't use the normal bitwarden url match mechanism. This is likely to change when bitwarden releases a new version of the CLI thanks to [this issue](https://github.com/bitwarden/cli/issues/32).
+
+In order to know if one needs to login or just unlock the vault, `bitwarden-keyring` reads the internal datastore of `bitwarden-cli`, so as any private API, it may change without notice.
+
+`bitwarden-keyring` was only tested with macOS so far, using the `bitwarden-cli` from `brew`.
+
+As mentionned, `bitwarden-keyring` only works in the context of a CLI application with access to standard inputs and output. If you need something that either reads silently or using another method of communication, the best is probably to make another backend and most of the functions ca be reused.
+
 ## Licensing
 
 `bitwarden-keyring` is published under the terms of the [MIT License](LICENSE.md).

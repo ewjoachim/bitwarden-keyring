@@ -1,10 +1,10 @@
 # Bitwarden Keyring
 
-Implementation of the [Keyring]() backend code reading secrets from [Bitwarden]() using [Bitwarden-cli]()
+Implementation of the [Keyring](https://pypi.org/project/keyring/) backend code reading secrets from [Bitwarden](https://bitwarden.com) using [Bitwarden-cli](https://help.bitwarden.com/article/cli/)
 
 ## Overview
 
-The [Keyring]() python package provides a handy single point of entry for any secret holding system, allowing for seemless integration of those systems into applications needing secrets, like [twine]().
+The [Keyring](https://pypi.org/project/keyring/) python package provides a handy single point of entry for any secret holding system, allowing for seemless integration of those systems into applications needing secrets, like [twine]().
 
 This projects implement Keyring to be able to read secrets from Bitwarden, an open source multiplatform cloud/self-hostable password manager.
 
@@ -12,7 +12,7 @@ This backend assumes that it will be used in the context of a CLI application, a
 
 ## Requirements
 
-This project uses the official [bitwarden CLI]() under the hood, because there's no simple official Python bitwarden lib. Here are the installation instructions as of October 2018 and the link to the [up to date instructions](https://github.com/bitwarden/cli#downloadinstall)
+This project uses the official [bitwarden CLI](https://help.bitwarden.com/article/cli/) under the hood, because there's no simple official Python bitwarden lib. Here are the installation instructions as of October 2018 and the link to the [up to date instructions](https://github.com/bitwarden/cli#downloadinstall)
 
 You can install the Bitwarden CLI multiple different ways:
 

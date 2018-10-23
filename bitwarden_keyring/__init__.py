@@ -36,8 +36,11 @@ def get_db_location(environ, platform):
 
 
 def open_db(db_location):
-    with open(db_location, "r") as file:
-        return json.load(file)
+    try:
+        with open(db_location, "r") as file:
+            return json.load(file)
+    except IOError:
+        return {}
 
 
 def extract_logged_user(db):

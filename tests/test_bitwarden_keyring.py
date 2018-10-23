@@ -60,6 +60,11 @@ def test_open_db(mocker):
     assert open.called_with("c", "r")
 
 
+def test_open_db_no_db(mocker):
+    mocker.patch("bitwarden_keyring.open", side_effect=IOError)
+    assert bwkr.open_db("c") == {}
+
+
 @pytest.mark.parametrize("user, expected", [({}, None), ({"userEmail": "a"}, "a")])
 def test_extract_logged_user(user, expected):
     assert bwkr.extract_logged_user(user) == expected

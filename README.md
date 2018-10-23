@@ -16,6 +16,15 @@ This projects implement Keyring to be able to read secrets from Bitwarden, an op
 
 This backend assumes that it will be used in the context of a CLI application, and that it can communicate with the user using `sdtin`, `stdout` and `stderr`. We could implement an additional backend for use in a library assuming that everything is already unlocked, or another one using `pinentry` to ask the user.
 
+
+## Disclamer
+
+There's currently a [solved bug](https://github.com/pypa/twine/pull/408) in Twine that's keeping keyring and thus this lib from being used. If you plan to use this for Twine, either wait for a twine release or install from master:
+
+```
+pip install git+https://github.com/pypa/twine
+```
+
 ## Requirements
 
 This project uses the official [bitwarden CLI](https://help.bitwarden.com/article/cli/) under the hood, because there's no simple official Python bitwarden lib. Here are the installation instructions as of October 2018 and the link to the [up to date instructions](https://github.com/bitwarden/cli#downloadinstall)

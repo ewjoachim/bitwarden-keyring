@@ -6,7 +6,6 @@
 [![codecov](https://codecov.io/gh/ewjoachim/bitwarden-keyring/branch/master/graph/badge.svg)](https://codecov.io/gh/ewjoachim/bitwarden-keyring)
 
 
-
 Implementation of the [Keyring](https://pypi.org/project/keyring/) backend code reading secrets from [Bitwarden](https://bitwarden.com) using [Bitwarden-cli](https://help.bitwarden.com/article/cli/)
 
 ## Overview
@@ -77,7 +76,9 @@ If you want to use it with [twine](https://pypi.org/project/twine/), good news, 
 
 In order to know if one needs to login or just unlock the vault, `bitwarden-keyring` reads the internal datastore of `bitwarden-cli`, so as any private API, it may change without notice.
 
-`bitwarden-keyring` was only tested with macOS so far, using the `bitwarden-cli` from `brew`.
+`bitwarden-keyring` was only tested with:
+- macOS, using the `bitwarden-cli` from `brew`
+- ubuntu, using the `bw` from `snap`
 
 As mentionned, `bitwarden-keyring` only works in the context of a CLI application with access to standard inputs and output. If you need something that either reads silently or using another method of communication, the best is probably to make another backend and most of the functions ca be reused.
 

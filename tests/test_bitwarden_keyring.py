@@ -108,6 +108,18 @@ def test_ask_for_session_command(is_authenticated, expected):
 
 
 @pytest.mark.parametrize(
+    "output, expected",
+    [
+        ("{}", False),
+        ("Username or password is incorrect.", True),
+        ("Invalid master password.", True),
+    ],
+)
+def test_wrong_password(output, expected):
+    assert bwkr.wrong_password(output) == expected
+
+
+@pytest.mark.parametrize(
     "session, args",
     [(None, ["bw", "yay", "ho"]), ("foo", ["bw", "--session", "foo", "yay", "ho"])],
 )
@@ -118,15 +130,30 @@ def test_bw(mocker, session, args):
 
     assert bwkr.bw("yay", "ho", session=session) == "haha"
 
-    run.assert_called_with(args, stdout=bwkr.subprocess.PIPE)
+    run.assert_called_with(args, check=True, stdout=bwkr.subprocess.PIPE)
 
 
 def test_bw_error(mocker):
     run = mocker.patch("subprocess.run")
-    run.return_value.stdout = b"Failed to decrypt.\nVault is locked."
+    run.side_effect = bwkr.subprocess.CalledProcessError(
+        output=b"Error", cmd=None, returncode=1
+    )
 
     with pytest.raises(ValueError):
         bwkr.bw("yay", "ho")
+
+
+def test_bw_wrong_password(mocker):
+    run = mocker.patch("subprocess.run")
+    run.side_effect = [
+        bwkr.subprocess.CalledProcessError(
+            output=b"Username or password is incorrect.", cmd=None, returncode=1
+        ),
+        mocker.Mock(stdout="{}"),
+    ]
+
+    assert bwkr.bw("yay", "ho") == "{}"
+    assert run.call_count == 2
 
 
 def test_match_credentials():
@@ -197,9 +224,7 @@ def test_select_match_single(mocker):
 
 
 def test_select_match_multiple(mocker):
-    single = mocker.patch(
-        "bitwarden_keyring.select_single_match", side_effect=ValueError
-    )
+    mocker.patch("bitwarden_keyring.select_single_match", side_effect=ValueError)
     multiple = mocker.patch("bitwarden_keyring.select_from_multiple_matches")
 
     assert bwkr.select_match([]) == multiple.return_value
@@ -229,7 +254,7 @@ def test_confirm_delete_no(bw, mocker, capsys):
     assert "Cancelled." in capsys.readouterr().out
 
 
-def test_get_session(bw, db):
+def test_get_session_login(bw, db):
     db.return_value = io.StringIO("{}")
     bw.return_value = "yo"
 
@@ -238,7 +263,7 @@ def test_get_session(bw, db):
     bw.assert_called_with("login", "--raw")
 
 
-def test_get_session(bw, db):
+def test_get_session_unlock(bw, db):
     bw.return_value = "yo"
 
     assert bwkr.get_session({}) == "yo"

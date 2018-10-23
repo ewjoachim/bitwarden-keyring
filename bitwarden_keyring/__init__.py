@@ -69,6 +69,14 @@ def ask_for_session_command(is_authenticated):
     return "unlock" if is_authenticated else "login"
 
 
+def wrong_password(output):
+    if "Username or password is incorrect" in output:
+        return True
+    elif "Invalid master password" in output:
+        return True
+    return False
+
+
 def bw(*args, session=None):
 
     cli_args = ["bw"]
@@ -77,13 +85,19 @@ def bw(*args, session=None):
 
     cli_args += list(args)
 
-    result = subprocess.run(cli_args, stdout=subprocess.PIPE).stdout.strip()
-
-    if result == b"Failed to decrypt.\nVault is locked.":
-        print(
-            "Wrong credentials. Maybe you left a stale BW_SESSION in the environment ?"
-        )
-        raise ValueError
+    while True:
+        try:
+            result = subprocess.run(
+                cli_args, stdout=subprocess.PIPE, check=True
+            ).stdout.strip()
+        except subprocess.CalledProcessError as exc:
+            output = exc.stdout.decode("utf-8")
+            if wrong_password(output):
+                print(output)
+                continue
+            raise ValueError(output) from exc
+        else:
+            break
 
     return result
 

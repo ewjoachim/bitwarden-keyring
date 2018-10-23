@@ -33,15 +33,19 @@ def test_get_db_location_env():
     )
 
 
-def test_get_db_location_platform():
+def test_get_db_location_platform(mocker):
+
+    exists = mocker.patch("os.path.exists", return_value=True)
     calls = {
         bwkr.get_db_location({}, "darwin"),
         bwkr.get_db_location({}, "win32"),
         bwkr.get_db_location({}, "linux"),
     }
+    exists.return_value = False
+    calls.add(bwkr.get_db_location({}, "linux"))
 
     # No 2 results are equal
-    assert len(calls) == 3
+    assert len(calls) == 4
 
     for call in calls:
         assert call.endswith("Bitwarden CLI/data.json")

@@ -28,7 +28,9 @@ def get_db_location(environ, platform):
         path = os.path.expandvars("%AppData%/Bitwarden CLI")
 
     else:
-        path = os.path.expanduser("~/.config/Bitwarden CLI")
+        path = os.path.expanduser("~/snap/bw/current/.config/Bitwarden CLI")
+        if not os.path.exists(path):
+            path = os.path.expanduser("~/.config/Bitwarden CLI")
 
     return os.path.join(path, "data.json")
 

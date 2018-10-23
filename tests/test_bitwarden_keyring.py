@@ -230,8 +230,19 @@ def test_select_match_multiple(mocker):
     assert bwkr.select_match([]) == multiple.return_value
 
 
-def test_get_session_environ():
+def test_get_session_environ(bw):
     assert bwkr.get_session({"BW_SESSION": "bla"}) == "bla"
+
+
+def test_get_session_environ_wrong_session(bw, db):
+    bw.side_effect = [ValueError, "yo"]
+
+    assert bwkr.get_session({"BW_SESSION": "bla"}) == "yo"
+
+    assert bw.call_count == 2
+
+    bw.assert_any_call("sync")
+    bw.assert_any_call("unlock", "--raw")
 
 
 def test_confirm_delete_yes(bw, mocker, capsys):

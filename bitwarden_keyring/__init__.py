@@ -157,7 +157,13 @@ def encode(payload):
 
 def get_session(environ):
     if "BW_SESSION" in environ:
-        return environ["BW_SESSION"]
+        try:
+            # Check that the token works.
+            bw("sync")
+        except ValueError:
+            pass
+        else:
+            return environ["BW_SESSION"]
 
     location = get_db_location(environ, sys.platform)
 

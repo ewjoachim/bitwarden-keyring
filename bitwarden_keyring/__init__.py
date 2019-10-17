@@ -174,8 +174,9 @@ def get_session(environ):
     return ask_for_session(bool(user))
 
 
-def get_password(service, username):
-    session = get_session(os.environ)
+def get_password(service, username, session=None):
+    if session == None:
+        session = get_session(os.environ)
 
     # Making sure we're up to date
     bw("sync", session=session)
@@ -191,8 +192,9 @@ def get_password(service, username):
     return select_match(matches)
 
 
-def set_password(service, username, password):
-    session = get_session(os.environ)
+def set_password(service, username, password, session=None):
+    if session == None:
+        session = get_session(os.environ)
 
     template_str = bw("get", "template", "item", session=session)
 
@@ -226,8 +228,9 @@ def confirm_delete(session, credential):
     print("Cancelled.")
 
 
-def delete_password(service, username):
-    session = get_session(os.environ)
+def delete_password(service, username, session=None):
+    if session == None:
+        session = get_session(os.environ)
 
     bw("sync", session=session)
 

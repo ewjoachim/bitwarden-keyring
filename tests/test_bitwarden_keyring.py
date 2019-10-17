@@ -292,6 +292,16 @@ def test_get_password(bw, db):
     assert bwkr.get_password("c", "a") == "b"
 
 
+def test_get_password_with_session(bw, db):
+    bw.side_effect = [
+        "mysession",
+        None,
+        '[{"login": {"username": "a", "password": "b"}}]',
+    ]
+    session = bwkr.get_session({"BW_SESSION": "bla"})
+
+    assert bwkr.get_password("c","a", session=session) == "b"
+
 def test_encode():
     assert bwkr.encode({"yay": "ho"}) == b"eyJ5YXkiOiAiaG8ifQ=="
     assert json.loads(base64.b64decode(bwkr.encode({"yay": "ho"}))) == {"yay": "ho"}
@@ -301,6 +311,34 @@ def test_set_password(bw, db):
     bw.side_effect = ["mysession", '{"a": "b"}', None]
 
     bwkr.set_password("c", "d", "e")
+
+    payload = (
+        b"eyJhIjogImIiLCAibmFtZSI6ICJjIiwgIm5vdGVzIjogbnVsbCw"
+        b"gImxvZ2luIjogeyJ1cmlzIjogW3sibWF0Y2giOiBudWxsLCAidXJ"
+        b"pIjogImMifV0sICJ1c2VybmFtZSI6ICJkIiwgInBhc3N3b3JkIjog"
+        b"ImUifX0="
+    )
+
+    bw.assert_called_with("create", "item", payload)
+
+    assert json.loads(base64.b64decode(payload).decode("utf-8")) == {
+        "a": "b",
+        "login": {
+            "password": "e",
+            "uris": [{"match": None, "uri": "c"}],
+            "username": "d",
+        },
+        "name": "c",
+        "notes": None,
+    }
+
+
+def test_set_password_with_session(bw, db):
+    bw.side_effect = ["mysession", '{"a": "b"}', None]
+
+    session = bwkr.get_session({"BW_SESSION": "bla"})
+
+    bwkr.set_password("c", "d", "e", session=session)
 
     payload = (
         b"eyJhIjogImIiLCAibmFtZSI6ICJjIiwgIm5vdGVzIjogbnVsbCw"
@@ -336,6 +374,21 @@ def test_delete_password(bw, db, mocker):
 
     bw.assert_called_with("delete", "item", "a", session="mysession")
 
+
+def test_delete_password_with_session(bw, db, mocker):
+    bw.side_effect = [
+        "mysession",
+        None,
+        '{"id": "a", "login": {"username": "b"}}',
+        None,
+    ]
+    mocker.patch("bitwarden_keyring.input", return_value="yes")
+
+    session = bwkr.get_session({"BW_SESSION": "bla"})
+
+    bwkr.delete_password("c", "d", session=session)
+
+    bw.assert_called_with("delete", "item", "a", session=session)
 
 def test_bitwarden_backend_prio_not_installed(mocker):
     mocker.patch("bitwarden_keyring.bitwarden_cli_installed", return_value=False)

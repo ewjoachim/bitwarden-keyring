@@ -77,7 +77,7 @@ If you want to use it with [twine](https://pypi.org/project/twine/), good news, 
 - macOS, using the `bitwarden-cli` from `brew`
 - ubuntu, using the `bw` from `snap`
 
-As mentionned, `bitwarden-keyring` only works in the context of a CLI application with access to standard inputs and output. If you need something that either reads silently or using another method of communication, the best is probably to make another backend and most of the functions ca be reused.
+As mentionned, `bitwarden-keyring` only works in the context of a CLI application with access to standard inputs and output. If you need something that either reads silently or using another method of communication, the best is probably to make another backend and most of the functions can be reused.
 
 ## Licensing
 

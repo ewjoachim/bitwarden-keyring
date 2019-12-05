@@ -3,8 +3,6 @@ import json
 import os
 import shutil
 import subprocess
-import sys
-from urllib.parse import urlsplit
 
 from keyring import backend
 from keyring.util import properties
@@ -18,14 +16,6 @@ def user_is_authenticated():
 
 def bitwarden_cli_installed():
     return bool(shutil.which("bw"))
-
-
-def extract_domain_name(full_url):
-    full_domain = urlsplit(full_url).netloc
-    if not full_domain:
-        return full_url
-
-    return ".".join(full_domain.split(".")[-2:])
 
 
 def ask_for_session(command):
@@ -149,9 +139,7 @@ def get_password(service, username):
     # Making sure we're up to date
     bw("sync", session=session)
 
-    search = extract_domain_name(service)
-
-    results = bw("list", "items", "--search", search, session=session)
+    results = bw("list", "items", "--url", service, session=session)
 
     credentials = json.loads(results)
 
@@ -200,9 +188,7 @@ def delete_password(service, username):
 
     bw("sync", session=session)
 
-    search = extract_domain_name(service)
-
-    result = bw("get", "item", search, session=session)
+    result = bw("get", "item", service, session=session)
 
     credential = json.loads(result)
 

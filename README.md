@@ -73,8 +73,6 @@ If you want to use it with [twine](https://pypi.org/project/twine/), good news, 
 
 ## Caveats
 
-`bitwarden-keyring` will try to select an appropriate credential based on the given service name, but as of now, it can't use the normal bitwarden url match mechanism. This is likely to change when bitwarden releases a new version of the CLI thanks to [this issue](https://github.com/bitwarden/cli/issues/32).
-
 `bitwarden-keyring` was only tested with:
 - macOS, using the `bitwarden-cli` from `brew`
 - ubuntu, using the `bw` from `snap`

@@ -75,8 +75,6 @@ If you want to use it with [twine](https://pypi.org/project/twine/), good news, 
 
 `bitwarden-keyring` will try to select an appropriate credential based on the given service name, but as of now, it can't use the normal bitwarden url match mechanism. This is likely to change when bitwarden releases a new version of the CLI thanks to [this issue](https://github.com/bitwarden/cli/issues/32).
 
-In order to know if one needs to login or just unlock the vault, `bitwarden-keyring` reads the internal datastore of `bitwarden-cli`, so as any private API, it may change without notice.
-
 `bitwarden-keyring` was only tested with:
 - macOS, using the `bitwarden-cli` from `brew`
 - ubuntu, using the `bw` from `snap`

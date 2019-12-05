@@ -12,39 +12,8 @@ from keyring.util import properties
 PRIORITY = 10  # Doc is oddly vague
 
 
-def get_db_location(environ, platform):
-    """
-    This is a port of
-    https://github.com/bitwarden/cli/blob/783e7fc8348d02853983211fa28dd8448247ba92/src/bw.ts#L67-L75
-    """
-    env = environ.get("BITWARDENCLI_APPDATA_DIR")
-    if env:
-        path = os.path.expanduser(env)
-
-    elif platform == "darwin":
-        path = os.path.expanduser("~/Library/Application Support/Bitwarden CLI")
-
-    elif platform == "win32":
-        path = os.path.expandvars("%AppData%/Bitwarden CLI")
-
-    else:
-        path = os.path.expanduser("~/snap/bw/current/.config/Bitwarden CLI")
-        if not os.path.exists(path):
-            path = os.path.expanduser("~/.config/Bitwarden CLI")
-
-    return os.path.join(path, "data.json")
-
-
-def open_db(db_location):
-    try:
-        with open(db_location, "r") as file:
-            return json.load(file)
-    except IOError:
-        return {}
-
-
-def extract_logged_user(db):
-    return db.get("userEmail")
+def user_is_authenticated():
+    return bw_run(*bw_args("login", "--check")).returncode == 0
 
 
 def bitwarden_cli_installed():
@@ -59,8 +28,7 @@ def extract_domain_name(full_url):
     return ".".join(full_domain.split(".")[-2:])
 
 
-def ask_for_session(is_authenticated):
-    command = ask_for_session_command(is_authenticated)
+def ask_for_session(command):
     result = bw(command, "--raw")
     return result
 
@@ -77,19 +45,25 @@ def wrong_password(output):
     return False
 
 
-def bw(*args, session=None):
-
+def bw_args(*args, session=None):
     cli_args = ["bw"]
     if session:
         cli_args += ["--session", session]
 
-    cli_args += list(args)
+    return cli_args + list(args)
+
+
+def bw_run(*args):
+    return subprocess.run(args, stdout=subprocess.PIPE, check=True)
+
+
+def bw(*args, session=None):
+
+    cli_args = bw_args(*args, session=session)
 
     while True:
         try:
-            result = subprocess.run(
-                cli_args, stdout=subprocess.PIPE, check=True
-            ).stdout.strip()
+            result = bw_run(*cli_args).stdout.strip()
         except subprocess.CalledProcessError as exc:
             output = exc.stdout.decode("utf-8")
             if wrong_password(output):
@@ -165,13 +139,8 @@ def get_session(environ):
         else:
             return environ["BW_SESSION"]
 
-    location = get_db_location(environ, sys.platform)
-
-    db = open_db(location)
-
-    user = extract_logged_user(db)
-
-    return ask_for_session(bool(user))
+    command = ask_for_session_command(is_authenticated=user_is_authenticated())
+    return ask_for_session(command=command)
 
 
 def get_password(service, username):

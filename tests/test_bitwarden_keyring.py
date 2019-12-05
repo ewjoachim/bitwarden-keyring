@@ -14,60 +14,14 @@ def bw(mocker):
 
 
 @pytest.fixture
-def db(mocker):
-    yield mocker.patch(
-        "bitwarden_keyring.open", return_value=io.StringIO('{"userEmail": "yo"}')
-    )
+def bw_run(mocker):
+    yield mocker.patch("bitwarden_keyring.bw_run")
 
 
 @pytest.fixture(autouse=True)
 def del_env(mocker):
     os.environ.pop("BW_SESSION", None)
     yield
-
-
-def test_get_db_location_env():
-    assert (
-        bwkr.get_db_location({"BITWARDENCLI_APPDATA_DIR": "/yay"}, "")
-        == "/yay/data.json"
-    )
-
-
-def test_get_db_location_platform(mocker):
-
-    exists = mocker.patch("os.path.exists", return_value=True)
-    calls = {
-        bwkr.get_db_location({}, "darwin"),
-        bwkr.get_db_location({}, "win32"),
-        bwkr.get_db_location({}, "linux"),
-    }
-    exists.return_value = False
-    calls.add(bwkr.get_db_location({}, "linux"))
-
-    # No 2 results are equal
-    assert len(calls) == 4
-
-    for call in calls:
-        assert call.endswith("Bitwarden CLI/data.json")
-
-
-def test_open_db(mocker):
-    open = mocker.patch(
-        "bitwarden_keyring.open", return_value=io.StringIO('{"a": "b"}')
-    )
-    assert bwkr.open_db("c") == {"a": "b"}
-
-    assert open.called_with("c", "r")
-
-
-def test_open_db_no_db(mocker):
-    mocker.patch("bitwarden_keyring.open", side_effect=IOError)
-    assert bwkr.open_db("c") == {}
-
-
-@pytest.mark.parametrize("user, expected", [({}, None), ({"userEmail": "a"}, "a")])
-def test_extract_logged_user(user, expected):
-    assert bwkr.extract_logged_user(user) == expected
 
 
 @pytest.mark.parametrize("path, expected", [(None, False), ("yay", True)])
@@ -77,34 +31,10 @@ def test_bitwarden_cli_installed(mocker, path, expected):
     assert bwkr.bitwarden_cli_installed() == expected
 
 
-@pytest.mark.parametrize(
-    "full_url, expected",
-    [
-        # Not an url: unchanged
-        ("yay", "yay"),
-        # An URL: extract domain
-        ("http://yay", "yay"),
-        # Don't keep subdomain
-        ("http://yay.example.com", "example.com"),
-        # Don't keep path
-        ("http://login:password@yay.example.com/bla?yay=1", "example.com"),
-    ],
-)
-def test_extract_domain_name(full_url, expected):
-    assert bwkr.extract_domain_name(full_url) == expected
-
-
 def test_ask_for_session(bw):
     bw.return_value = "yay"
-    assert bwkr.ask_for_session(True) == "yay"
+    assert bwkr.ask_for_session("unlock") == "yay"
     bw.assert_called_with("unlock", "--raw")
-
-
-@pytest.mark.parametrize(
-    "is_authenticated, expected", [(True, "unlock"), (False, "login")]
-)
-def test_ask_for_session_command(is_authenticated, expected):
-    assert bwkr.ask_for_session_command(is_authenticated) == expected
 
 
 @pytest.mark.parametrize(
@@ -123,14 +53,26 @@ def test_wrong_password(output, expected):
     "session, args",
     [(None, ["bw", "yay", "ho"]), ("foo", ["bw", "--session", "foo", "yay", "ho"])],
 )
-def test_bw(mocker, session, args):
+def test_bw_args(mocker, session, args):
+
+    assert bwkr.bw_args("yay", "ho", session=session) == args
+
+
+def test_bw_run(mocker):
     run = mocker.patch("subprocess.run")
 
-    run.return_value.stdout = " haha "
+    assert bwkr.bw_run("a", "b", "c") == run.return_value
 
-    assert bwkr.bw("yay", "ho", session=session) == "haha"
+    run.assert_called_with(("a", "b", "c"), check=True, stdout=bwkr.subprocess.PIPE)
 
-    run.assert_called_with(args, check=True, stdout=bwkr.subprocess.PIPE)
+
+def test_bw(mocker):
+    run = mocker.patch("bitwarden_keyring.bw_run")
+    run.return_value.stdout = "yay"
+
+    assert bwkr.bw("a", "b", "c") == "yay"
+
+    run.assert_called_with("bw", "a", "b", "c")
 
 
 def test_bw_error(mocker):
@@ -234,7 +176,7 @@ def test_get_session_environ(bw):
     assert bwkr.get_session({"BW_SESSION": "bla"}) == "bla"
 
 
-def test_get_session_environ_wrong_session(bw, db):
+def test_get_session_environ_wrong_session(bw):
     bw.side_effect = [ValueError, "yo"]
 
     assert bwkr.get_session({"BW_SESSION": "bla"}) == "yo"
@@ -265,24 +207,25 @@ def test_confirm_delete_no(bw, mocker, capsys):
     assert "Cancelled." in capsys.readouterr().out
 
 
-def test_get_session_login(bw, db):
-    db.return_value = io.StringIO("{}")
-    bw.return_value = "yo"
+@pytest.mark.parametrize(
+    "is_authenticated, command", [(False, "login"), (True, "unlock")]
+)
+def test_ask_for_session_command(bw_run, is_authenticated, command):
+    assert bwkr.ask_for_session_command(is_authenticated=is_authenticated) == command
+
+
+def test_get_session(mocker):
+    mocker.patch("bitwarden_keyring.user_is_authenticated", return_value=True)
+    ask_for_session = mocker.patch(
+        "bitwarden_keyring.ask_for_session", return_value="yo"
+    )
 
     assert bwkr.get_session({}) == "yo"
 
-    bw.assert_called_with("login", "--raw")
+    ask_for_session.assert_called_with(command="unlock")
 
 
-def test_get_session_unlock(bw, db):
-    bw.return_value = "yo"
-
-    assert bwkr.get_session({}) == "yo"
-
-    bw.assert_called_with("unlock", "--raw")
-
-
-def test_get_password(bw, db):
+def test_get_password(bw):
     bw.side_effect = [
         "mysession",
         None,
@@ -297,7 +240,7 @@ def test_encode():
     assert json.loads(base64.b64decode(bwkr.encode({"yay": "ho"}))) == {"yay": "ho"}
 
 
-def test_set_password(bw, db):
+def test_set_password(bw):
     bw.side_effect = ["mysession", '{"a": "b"}', None]
 
     bwkr.set_password("c", "d", "e")
@@ -323,7 +266,7 @@ def test_set_password(bw, db):
     }
 
 
-def test_delete_password(bw, db, mocker):
+def test_delete_password(bw, mocker):
     bw.side_effect = [
         "mysession",
         None,

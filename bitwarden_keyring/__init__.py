@@ -5,7 +5,7 @@ import shutil
 import subprocess
 
 from keyring import backend
-from keyring.util import properties
+from jaraco.classes import properties
 
 PRIORITY = 10  # Doc is oddly vague
 
@@ -196,7 +196,7 @@ def delete_password(service, username):
 
 
 class BitwardenBackend(backend.KeyringBackend):
-    @properties.ClassProperty
+    @properties.classproperty
     @classmethod
     def priority(cls):
         if not bitwarden_cli_installed():

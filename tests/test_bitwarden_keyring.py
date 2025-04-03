@@ -4,17 +4,17 @@ import os
 
 import pytest
 
-import bitwarden_keyring as bwkr
+import bitwarden_keyring.backend as bwkr
 
 
 @pytest.fixture
 def bw(mocker):
-    yield mocker.patch("bitwarden_keyring.bw")
+    yield mocker.patch("bitwarden_keyring.backend.bw")
 
 
 @pytest.fixture
 def bw_run(mocker):
-    yield mocker.patch("bitwarden_keyring.bw_run")
+    yield mocker.patch("bitwarden_keyring.backend.bw_run")
 
 
 @pytest.fixture(autouse=True)
@@ -66,7 +66,7 @@ def test_bw_run(mocker):
 
 
 def test_bw(mocker):
-    run = mocker.patch("bitwarden_keyring.bw_run")
+    run = mocker.patch("bitwarden_keyring.backend.bw_run")
     run.return_value.stdout = "yay"
 
     assert bwkr.bw("a", "b", "c") == "yay"
@@ -148,7 +148,7 @@ def test_display_credential(cred, expected):
 
 
 def test_select_from_multiple_matches(mocker):
-    mocker.patch("bitwarden_keyring.input", return_value="1")
+    mocker.patch("bitwarden_keyring.backend.input", return_value="1")
 
     assert (
         bwkr.select_from_multiple_matches(
@@ -159,14 +159,16 @@ def test_select_from_multiple_matches(mocker):
 
 
 def test_select_match_single(mocker):
-    single = mocker.patch("bitwarden_keyring.select_single_match")
+    single = mocker.patch("bitwarden_keyring.backend.select_single_match")
 
     assert bwkr.select_match([]) == single.return_value
 
 
 def test_select_match_multiple(mocker):
-    mocker.patch("bitwarden_keyring.select_single_match", side_effect=ValueError)
-    multiple = mocker.patch("bitwarden_keyring.select_from_multiple_matches")
+    mocker.patch(
+        "bitwarden_keyring.backend.select_single_match", side_effect=ValueError
+    )
+    multiple = mocker.patch("bitwarden_keyring.backend.select_from_multiple_matches")
 
     assert bwkr.select_match([]) == multiple.return_value
 
@@ -187,7 +189,7 @@ def test_get_session_environ_wrong_session(bw):
 
 
 def test_confirm_delete_yes(bw, mocker, capsys):
-    mocker.patch("bitwarden_keyring.input", return_value="yes")
+    mocker.patch("bitwarden_keyring.backend.input", return_value="yes")
 
     bwkr.confirm_delete("yo", {"id": "yay", "name": "a", "login": {"username": "b"}})
 
@@ -197,7 +199,7 @@ def test_confirm_delete_yes(bw, mocker, capsys):
 
 
 def test_confirm_delete_no(bw, mocker, capsys):
-    mocker.patch("bitwarden_keyring.input", return_value="")
+    mocker.patch("bitwarden_keyring.backend.input", return_value="")
 
     bwkr.confirm_delete("yo", {"id": "yay", "name": "a", "login": {"username": "b"}})
 
@@ -214,9 +216,9 @@ def test_ask_for_session_command(bw_run, is_authenticated, command):
 
 
 def test_get_session(mocker):
-    mocker.patch("bitwarden_keyring.user_is_authenticated", return_value=True)
+    mocker.patch("bitwarden_keyring.backend.user_is_authenticated", return_value=True)
     ask_for_session = mocker.patch(
-        "bitwarden_keyring.ask_for_session", return_value="yo"
+        "bitwarden_keyring.backend.ask_for_session", return_value="yo"
     )
 
     assert bwkr.get_session({}) == "yo"
@@ -272,7 +274,7 @@ def test_delete_password(bw, mocker):
         '{"id": "a", "login": {"username": "b"}}',
         None,
     ]
-    mocker.patch("bitwarden_keyring.input", return_value="yes")
+    mocker.patch("bitwarden_keyring.backend.input", return_value="yes")
 
     bwkr.delete_password("c", "d")
 
@@ -280,26 +282,28 @@ def test_delete_password(bw, mocker):
 
 
 def test_bitwarden_backend_prio_not_installed(mocker):
-    mocker.patch("bitwarden_keyring.bitwarden_cli_installed", return_value=False)
+    mocker.patch(
+        "bitwarden_keyring.backend.bitwarden_cli_installed", return_value=False
+    )
     with pytest.raises(RuntimeError):
         bwkr.BitwardenBackend.priority
 
 
 def test_bitwarden_backend_prio_installed(mocker):
-    mocker.patch("bitwarden_keyring.bitwarden_cli_installed", return_value=True)
+    mocker.patch("bitwarden_keyring.backend.bitwarden_cli_installed", return_value=True)
 
     assert bwkr.BitwardenBackend.priority == 10
 
 
 def test_bitwarden_backend_get_password(mocker):
-    get_password = mocker.patch("bitwarden_keyring.get_password")
+    get_password = mocker.patch("bitwarden_keyring.backend.get_password")
 
     assert bwkr.BitwardenBackend().get_password("a", "b") == get_password.return_value
     get_password.assert_called_with("a", "b")
 
 
 def test_bitwarden_backend_set_password(mocker):
-    set_password = mocker.patch("bitwarden_keyring.set_password")
+    set_password = mocker.patch("bitwarden_keyring.backend.set_password")
 
     assert (
         bwkr.BitwardenBackend().set_password("a", "b", "c") == set_password.return_value
@@ -308,7 +312,7 @@ def test_bitwarden_backend_set_password(mocker):
 
 
 def test_bitwarden_backend_delete_password(mocker):
-    delete_password = mocker.patch("bitwarden_keyring.delete_password")
+    delete_password = mocker.patch("bitwarden_keyring.backend.delete_password")
 
     assert (
         bwkr.BitwardenBackend().delete_password("a", "b")

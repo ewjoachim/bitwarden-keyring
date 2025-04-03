@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern = "default-unprefixed"
+
+[project]
+name = "bitwarden-keyring"
+dynamic = ["version"]
+description = "A Bitwarden backend for the keyring Python library"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["keyring>=25.6.0"]
+authors = [{ name = "Joachim Jablon", email = "ewjoachim@gmail.com" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+]
+
+[project.entry-points."keyring.backends"]
+bitwarden = "bitwarden_keyring"
+
+[dependency-groups]
+dev = ["pytest", "pytest-mock", "ruff>=0.13.3"]
+
+[tool.basedpyright]
+include = ["bitwarden_keyring"]
+exclude = ["tests", ".venv"]
+typeCheckingMode = "standard"
+
+[tool.ruff]
+extend-exclude = ["tests"]
+
+[tool.ruff.lint]
+preview = true
+extend-select = [
+    "E",     # pycodestyle (Error)
+    "W",     # pycodestyle (Warning)
+    "F",     # pyflakes
+    "ASYNC", # flake8-async
+    "S",     # flake8-bandit
+    "UP",    # pyupgrade
+    "PL",    # pylint
+    "TID",   # flake8-tidy-imports
+    "N",     # pep8-naming
+    "B",     # flake8-bugbear
+    "A",     # flake8-builtins
+    "SLF",   # flake8-self
+    "T20",   # flake8-print
+    "ICN",   # flake8-import-conventions
+    "RUF",   # ruff (RUFF specific rules)
+    "Q",     # flake8-quotes
+    "T10",   # flake8-debugger
+    "I",     # isort
+]
+ignore = [
+    "PLR0911", # https://docs.astral.sh/ruff/rules/too-many-return-statements/
+    "PLR0912", # https://docs.astral.sh/ruff/rules/too-many-branches/
+    "PLR0913", # https://docs.astral.sh/ruff/rules/too-many-arguments/
+    "PLR0915", # https://docs.astral.sh/ruff/rules/too-many-statements/
+    "N818",    # https://docs.astral.sh/ruff/rules/error-suffix-on-exception-name/
+    "PLR2004", # https://docs.astral.sh/ruff/rules/magic-value-comparison/
+    "S324",    # https://docs.astral.sh/ruff/rules/hashlib-insecure-hash-function/
+    "PLW1514", # https://docs.astral.sh/ruff/rules/unspecified-encoding/
+    "PLR6301", # https://docs.astral.sh/ruff/rules/no-self-use/
+    "S404",    # https://docs.astral.sh/ruff/rules/suspicious-subprocess-import/
+    "S603",    # https://docs.astral.sh/ruff/rules/subprocess-without-shell-equals-true/
+    "T201",    # https://docs.astral.sh/ruff/rules/print/
+]
+fixable = ["ALL"]
+unfixable = ["T201"]
+extend-ignore = [
+    "E501", # line too long
+]

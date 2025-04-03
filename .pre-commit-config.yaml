@@ -1,0 +1,38 @@
+ci:
+  autoupdate_schedule: quarterly
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # File names
+      - id: check-case-conflict # File formats
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: check-ast
+      - id: debug-statements # Whitespace
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      - id: ruff-check
+        args: [ --fix, --unsafe-fixes, --show-fixes ]
+      - id: ruff-format
+
+  - repo: https://github.com/ewjoachim/sync-pre-commit-with-uv
+    rev: 1.1.0
+    hooks:
+      - id: sync
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.8.13
+    hooks:
+      - id: uv-lock
+  # - repo: https://github.com/DetachHead/basedpyright-prek-mirror
+  #   rev: 1.39.3
+  #   hooks:
+  #     - id: basedpyright

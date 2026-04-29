@@ -139,7 +139,7 @@ def get_password(service, username):
     # Making sure we're up to date
     bw("sync", session=session)
 
-    results = bw("list", "items", "--url", service, session=session)
+    results = bw("list", "items", "--search", service, session=session)
 
     credentials = json.loads(results)
 

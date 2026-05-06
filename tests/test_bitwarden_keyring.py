@@ -1,39 +1,52 @@
 import base64
 import json
-import os
 
 import pytest
 
-import bitwarden_keyring as bwkr
+from bitwarden_keyring import backend
 
 
-@pytest.fixture
-def bw(mocker):
-    yield mocker.patch("bitwarden_keyring.bw")
-
-
-@pytest.fixture
-def bw_run(mocker):
-    yield mocker.patch("bitwarden_keyring.bw_run")
+# Ensure any call to a subprocess would be caught
+@pytest.fixture(autouse=True)
+def ensure_no_process(fake_process):
+    pass
 
 
 @pytest.fixture(autouse=True)
-def del_env(mocker):
-    os.environ.pop("BW_SESSION", None)
+def del_env(monkeypatch):
+    monkeypatch.delenv("BW_SESSION", raising=False)
     yield
 
 
+@pytest.fixture
+def cred():
+    def f(
+        id: str = "id",  # noqa: A002
+        name: str | None = None,
+        username: str = "user",
+        password: str = "password",
+    ) -> backend.Credentials:
+        credentials: backend.Credentials = {
+            "id": id,
+            "login": {"username": username, "password": password},
+        }
+        if name:
+            credentials["name"] = name
+        return credentials
+
+    return f
+
+
 @pytest.mark.parametrize("path, expected", [(None, False), ("yay", True)])
-def test_bitwarden_cli_installed(mocker, path, expected):
-    mocker.patch("shutil.which", return_value=path)
+def test_bitwarden_cli_installed(path, expected):
 
-    assert bwkr.bitwarden_cli_installed() == expected
+    assert backend.bitwarden_cli_installed(which_callable=lambda cmd: path) == expected
 
 
-def test_ask_for_session(bw):
-    bw.return_value = "yay"
-    assert bwkr.ask_for_session("unlock") == "yay"
-    bw.assert_called_with("unlock", "--raw")
+def test_ask_for_session(fake_process):
+    fake_process.register(["bw", "unlock", "--raw"], stdout="yay")
+
+    assert backend.ask_for_session("unlock") == "yay"
 
 
 @pytest.mark.parametrize(
@@ -45,7 +58,7 @@ def test_ask_for_session(bw):
     ],
 )
 def test_wrong_password(output, expected):
-    assert bwkr.wrong_password(output) == expected
+    assert backend.wrong_password(output) == expected
 
 
 @pytest.mark.parametrize(
@@ -54,53 +67,41 @@ def test_wrong_password(output, expected):
 )
 def test_bw_args(mocker, session, args):
 
-    assert bwkr.bw_args("yay", "ho", session=session) == args
+    assert backend.bw_args("yay", "ho", session=session) == args
 
 
-def test_bw_run(mocker):
-    run = mocker.patch("subprocess.run")
+def test_bw_run(fake_process):
+    fake_process.register(["a", "b", "c"])
 
-    assert bwkr.bw_run("a", "b", "c") == run.return_value
-
-    run.assert_called_with(("a", "b", "c"), check=True, stdout=bwkr.subprocess.PIPE)
+    assert backend.bw_run("a", "b", "c")
 
 
-def test_bw(mocker):
-    run = mocker.patch("bitwarden_keyring.bw_run")
-    run.return_value.stdout = "yay"
+def test_bw(fake_process):
+    fake_process.register(["bw", "a", "b", "c"], stdout="foo")
 
-    assert bwkr.bw("a", "b", "c") == "yay"
-
-    run.assert_called_with("bw", "a", "b", "c")
+    assert backend.bw("a", "b", "c") == "foo"
 
 
-def test_bw_error(mocker):
-    run = mocker.patch("subprocess.run")
-    run.side_effect = bwkr.subprocess.CalledProcessError(
-        output=b"Error", cmd=None, returncode=1
-    )
+def test_bw_error(fake_process):
+    fake_process.register(["bw", "foo", "bar"], returncode=1, stdout="Error")
 
     with pytest.raises(ValueError):
-        bwkr.bw("yay", "ho")
+        backend.bw("foo", "bar")
 
 
-def test_bw_wrong_password(mocker):
-    run = mocker.patch("subprocess.run")
-    run.side_effect = [
-        bwkr.subprocess.CalledProcessError(
-            output=b"Username or password is incorrect.", cmd=None, returncode=1
-        ),
-        mocker.Mock(stdout="{}"),
-    ]
+def test_bw_wrong_password(fake_process):
+    fake_process.register(
+        ["bw", "foo", "bar"], returncode=1, stdout="Username or password is incorrect"
+    )
+    fake_process.register(["bw", "foo", "bar"], stdout="{}")
 
-    assert bwkr.bw("yay", "ho") == "{}"
-    assert run.call_count == 2
+    assert backend.bw("foo", "bar") == "{}"
 
 
 def test_match_credentials():
     assert list(
-        bwkr.match_credentials(
-            [
+        backend.match_credentials(
+            [  # pyright: ignore[reportArgumentType]
                 {"a": "b"},
                 {"login": {"username": "bla"}},
                 {"login": {"username": "myname"}, "ha": "ho"},
@@ -113,26 +114,26 @@ def test_match_credentials():
 
 @pytest.mark.parametrize(
     "matches, expected",
-    [([], None), ([{"pouet": "a"}], None), ([{"login": {"password": "a"}}], "a")],
+    [([], None), ([{"foo": "a"}], None), ([{"login": {"password": "a"}}], "a")],
 )
 def test_select_single_match(matches, expected):
-    assert bwkr.select_single_match(matches) == expected
+    assert backend.select_single_match(matches) == expected
 
 
-def test_select_single_match_error():
+def test_select_single_match_error(cred):
     with pytest.raises(ValueError):
-        assert bwkr.select_single_match([{}, {}])
+        assert backend.select_single_match([cred(), cred()])
 
 
-def test_display_credentials():
+def test_display_credentials(cred):
     assert (
-        bwkr.display_credentials(
+        backend.display_credentials(
             {
-                "a": {"login": {"username": "yay"}},
-                "b": {"name": "pouet", "login": {"username": "yo"}},
+                "1": cred(username="baz"),
+                "2": cred(name="foo", username="bar"),
             }
         )
-        == "a) no name - yay\nb) pouet - yo"
+        == "1) no name - baz\n2) foo - bar"
     )
 
 
@@ -140,68 +141,81 @@ def test_display_credentials():
     "cred, expected",
     [
         ({"login": {"username": "yay"}}, "no name - yay"),
-        ({"name": "pouet", "login": {"username": "yo"}}, "pouet - yo"),
+        ({"name": "foo", "login": {"username": "yo"}}, "foo - yo"),
     ],
 )
 def test_display_credential(cred, expected):
-    assert bwkr.display_credential({"login": {"username": "yay"}}) == "no name - yay"
+    assert backend.display_credential(cred) == expected
 
 
-def test_select_from_multiple_matches(mocker):
-    mocker.patch("bitwarden_keyring.input", return_value="1")
+def test_select_from_multiple_matches(cred):
+    result = backend.select_from_multiple_matches(
+        matches=[cred(password="foo")], input_callable=lambda x: "1"
+    )
+    assert result == "foo"
 
+
+def test_select_match_single__empty():
+
+    assert backend.select_match([], input_callable=lambda x: "1") is None
+
+
+def test_select_match_multiple(cred):
     assert (
-        bwkr.select_from_multiple_matches(
-            [{"login": {"username": "yay", "password": "ho"}}]
+        backend.select_match(
+            [cred(password="foo"), cred(password="bar")], input_callable=lambda x: "1"
         )
-        == "ho"
+        == "foo"
     )
 
 
-def test_select_match_single(mocker):
-    single = mocker.patch("bitwarden_keyring.select_single_match")
-
-    assert bwkr.select_match([]) == single.return_value
-
-
-def test_select_match_multiple(mocker):
-    mocker.patch("bitwarden_keyring.select_single_match", side_effect=ValueError)
-    multiple = mocker.patch("bitwarden_keyring.select_from_multiple_matches")
-
-    assert bwkr.select_match([]) == multiple.return_value
+def test_get_session_environ(fake_process):
+    fake_process.register(["bw", "sync"])
+    assert backend.get_session({"BW_SESSION": "bla"}) == "bla"
 
 
-def test_get_session_environ(bw):
-    assert bwkr.get_session({"BW_SESSION": "bla"}) == "bla"
+def test_get_session_unauthenticated_with_env(fake_process):
+    fake_process.register(["bw", "sync"], returncode=1)
+    fake_process.register(["bw", "login", "--check"], returncode=1)
+    fake_process.register(["bw", "login", "--raw"], stdout="foo")
+
+    assert backend.get_session({"BW_SESSION": "bla"}) == "foo"
 
 
-def test_get_session_environ_wrong_session(bw):
-    bw.side_effect = [ValueError, "yo"]
+def test_get_session_authenticated_with_env(fake_process):
+    fake_process.register(["bw", "sync"])
 
-    assert bwkr.get_session({"BW_SESSION": "bla"}) == "yo"
-
-    assert bw.call_count == 2
-
-    bw.assert_any_call("sync")
-    bw.assert_any_call("unlock", "--raw")
+    assert backend.get_session({"BW_SESSION": "bla"}) == "bla"
 
 
-def test_confirm_delete_yes(bw, mocker, capsys):
-    mocker.patch("bitwarden_keyring.input", return_value="yes")
+def test_get_session_unauthenticated_without_env(fake_process):
+    fake_process.register(["bw", "login", "--check"], returncode=1)
+    fake_process.register(["bw", "login", "--raw"], stdout="foo")
 
-    bwkr.confirm_delete("yo", {"id": "yay", "name": "a", "login": {"username": "b"}})
+    assert backend.get_session({}) == "foo"
 
-    bw.assert_called_with("delete", "item", "yay", session="yo")
+
+def test_get_session_authenticated_without_env(fake_process):
+    fake_process.register(["bw", "login", "--check"])
+    fake_process.register(["bw", "unlock", "--raw"], stdout="foo")
+
+    assert backend.get_session({}) == "foo"
+
+
+def test_confirm_delete_yes(fake_process, cred, capsys):
+    fake_process.register(["bw", "--session", "yo", "delete", "item", "foo"])
+
+    backend.confirm_delete(
+        session="yo", credential=cred(id="foo"), input_callable=lambda x: "yes"
+    )
 
     assert "Deleted." in capsys.readouterr().out
 
 
-def test_confirm_delete_no(bw, mocker, capsys):
-    mocker.patch("bitwarden_keyring.input", return_value="")
-
-    bwkr.confirm_delete("yo", {"id": "yay", "name": "a", "login": {"username": "b"}})
-
-    assert not bw.called
+def test_confirm_delete_no(fake_process, cred, capsys):
+    backend.confirm_delete(
+        session="yo", credential=cred(id="foo"), input_callable=lambda x: "no"
+    )
 
     assert "Cancelled." in capsys.readouterr().out
 
@@ -209,109 +223,104 @@ def test_confirm_delete_no(bw, mocker, capsys):
 @pytest.mark.parametrize(
     "is_authenticated, command", [(False, "login"), (True, "unlock")]
 )
-def test_ask_for_session_command(bw_run, is_authenticated, command):
-    assert bwkr.ask_for_session_command(is_authenticated=is_authenticated) == command
+def test_ask_for_session_command(is_authenticated, command):
+    assert backend.ask_for_session_command(is_authenticated=is_authenticated) == command
 
 
-def test_get_session(mocker):
-    mocker.patch("bitwarden_keyring.user_is_authenticated", return_value=True)
-    ask_for_session = mocker.patch(
-        "bitwarden_keyring.ask_for_session", return_value="yo"
+def test_get_password(fake_process, cred):
+    fake_process.register(["bw", "sync"])
+    fake_process.register(["bw", "--session", "bla", "sync"])
+    fake_process.register(
+        ["bw", "--session", "bla", "list", "items", "--search", "foo"],
+        stdout=json.dumps([cred(name="foo", username="bar", password="baz")]),
     )
 
-    assert bwkr.get_session({}) == "yo"
-
-    ask_for_session.assert_called_with(command="unlock")
-
-
-def test_get_password(bw):
-    bw.side_effect = [
-        "mysession",
-        None,
-        '[{"login": {"username": "a", "password": "b"}}]',
-    ]
-
-    assert bwkr.get_password("c", "a") == "b"
+    assert backend.get_password("foo", "bar", _environ={"BW_SESSION": "bla"}) == "baz"
 
 
 def test_encode():
-    assert bwkr.encode({"yay": "ho"}) == b"eyJ5YXkiOiAiaG8ifQ=="
-    assert json.loads(base64.b64decode(bwkr.encode({"yay": "ho"}))) == {"yay": "ho"}
+    assert backend.encode({"yay": "ho"}) == "eyJ5YXkiOiAiaG8ifQ=="
+    assert json.loads(base64.b64decode(backend.encode({"yay": "ho"}))) == {"yay": "ho"}
 
 
-def test_set_password(bw):
-    bw.side_effect = ["mysession", '{"a": "b"}', None]
-
-    bwkr.set_password("c", "d", "e")
-
+def test_set_password(fake_process):
+    fake_process.register(["bw", "sync"])
+    fake_process.register(
+        ["bw", "--session", "bla", "get", "template", "item"], stdout='{"a": "b"}'
+    )
     payload = (
-        b"eyJhIjogImIiLCAibmFtZSI6ICJjIiwgIm5vdGVzIjogbnVsbCw"
-        b"gImxvZ2luIjogeyJ1cmlzIjogW3sibWF0Y2giOiBudWxsLCAidXJ"
-        b"pIjogImMifV0sICJ1c2VybmFtZSI6ICJkIiwgInBhc3N3b3JkIjog"
-        b"ImUifX0="
+        "eyJhIjogImIiLCAibmFtZSI6ICJmb28iLCAibm90ZXMiOiBudWxsLCAibG9naW4iOiB7"
+        "InVyaXMiOiBbeyJtYXRjaCI6IG51bGwsICJ1cmkiOiAiZm9vIn1dLCAidXNlcm5hbWUi"
+        "OiAiYmFyIiwgInBhc3N3b3JkIjogImJheiJ9fQ=="
     )
 
-    bw.assert_called_with("create", "item", payload)
+    fake_process.register(["bw", "create", "item", payload])
+
+    backend.set_password("foo", "bar", "baz", _environ={"BW_SESSION": "bla"})
 
     assert json.loads(base64.b64decode(payload).decode("utf-8")) == {
-        "a": "b",
+        "name": "foo",
         "login": {
-            "password": "e",
-            "uris": [{"match": None, "uri": "c"}],
-            "username": "d",
+            "username": "bar",
+            "uris": [{"match": None, "uri": "foo"}],
+            "password": "baz",
         },
-        "name": "c",
+        "a": "b",
         "notes": None,
     }
 
 
-def test_delete_password(bw, mocker):
-    bw.side_effect = [
-        "mysession",
-        None,
-        '{"id": "a", "login": {"username": "b"}}',
-        None,
-    ]
-    mocker.patch("bitwarden_keyring.input", return_value="yes")
+def test_delete_password(fake_process, cred):
+    fake_process.register(["bw", "sync"])
+    fake_process.register(["bw", "--session", "bla", "sync"])
+    fake_process.register(
+        ["bw", "--session", "bla", "get", "item", "foo"], stdout=json.dumps(cred())
+    )
+    fake_process.register(["bw", "--session", "bla", "delete", "item", "id"])
 
-    bwkr.delete_password("c", "d")
-
-    bw.assert_called_with("delete", "item", "a", session="mysession")
+    backend.delete_password(
+        "foo", "bar", _environ={"BW_SESSION": "bla"}, _input_callable=lambda x: "yes"
+    )
 
 
 def test_bitwarden_backend_prio_not_installed(mocker):
-    mocker.patch("bitwarden_keyring.bitwarden_cli_installed", return_value=False)
+    mocker.patch(
+        "bitwarden_keyring.backend.bitwarden_cli_installed", return_value=False
+    )
     with pytest.raises(RuntimeError):
-        bwkr.BitwardenBackend.priority
+        backend.BitwardenBackend.priority  # noqa: B018
 
 
 def test_bitwarden_backend_prio_installed(mocker):
-    mocker.patch("bitwarden_keyring.bitwarden_cli_installed", return_value=True)
+    mocker.patch("bitwarden_keyring.backend.bitwarden_cli_installed", return_value=True)
 
-    assert bwkr.BitwardenBackend.priority == 10
+    assert backend.BitwardenBackend.priority == 10
 
 
 def test_bitwarden_backend_get_password(mocker):
-    get_password = mocker.patch("bitwarden_keyring.get_password")
+    get_password = mocker.patch("bitwarden_keyring.backend.get_password")
 
-    assert bwkr.BitwardenBackend().get_password("a", "b") == get_password.return_value
+    assert (
+        backend.BitwardenBackend().get_password("a", "b") == get_password.return_value
+    )
     get_password.assert_called_with("a", "b")
 
 
 def test_bitwarden_backend_set_password(mocker):
-    set_password = mocker.patch("bitwarden_keyring.set_password")
+    set_password = mocker.patch("bitwarden_keyring.backend.set_password")
 
     assert (
-        bwkr.BitwardenBackend().set_password("a", "b", "c") == set_password.return_value
+        backend.BitwardenBackend().set_password("a", "b", "c")
+        == set_password.return_value
     )
     set_password.assert_called_with("a", "b", "c")
 
 
 def test_bitwarden_backend_delete_password(mocker):
-    delete_password = mocker.patch("bitwarden_keyring.delete_password")
+    delete_password = mocker.patch("bitwarden_keyring.backend.delete_password")
 
     assert (
-        bwkr.BitwardenBackend().delete_password("a", "b")
+        backend.BitwardenBackend().delete_password("a", "b")
         == delete_password.return_value
     )
     delete_password.assert_called_with("a", "b")

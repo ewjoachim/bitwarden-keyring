@@ -14,7 +14,10 @@ dynamic = ["version"]
 description = "A Bitwarden backend for the keyring Python library"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["keyring>=25.6.0"]
+dependencies = [
+    "keyring>=25.6.0",
+    "typing-extensions>=4.15.0; python_version <= '3.10'",
+]
 authors = [{ name = "Joachim Jablon", email = "ewjoachim@gmail.com" }]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -26,15 +29,15 @@ classifiers = [
 bitwarden = "bitwarden_keyring"
 
 [dependency-groups]
-dev = ["pytest", "pytest-mock", "ruff>=0.13.3"]
+dev = ["pytest", "pytest-mock", "pytest-subprocess>=1.5.4", "ruff>=0.13.3"]
 
 [tool.basedpyright]
 include = ["bitwarden_keyring"]
 exclude = ["tests", ".venv"]
 typeCheckingMode = "standard"
+reportUnusedCallResult = false
 
 [tool.ruff]
-extend-exclude = ["tests"]
 
 [tool.ruff.lint]
 preview = true
@@ -71,9 +74,22 @@ ignore = [
     "S404",    # https://docs.astral.sh/ruff/rules/suspicious-subprocess-import/
     "S603",    # https://docs.astral.sh/ruff/rules/subprocess-without-shell-equals-true/
     "T201",    # https://docs.astral.sh/ruff/rules/print/
+    "S106",    # https://docs.astral.sh/ruff/rules/hardcoded-password-func-arg/
+    "S107",    # https://docs.astral.sh/ruff/rules/hardcoded-password-default/
 ]
+
 fixable = ["ALL"]
 unfixable = ["T201"]
 extend-ignore = [
     "E501", # line too long
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/"]
+filterwarnings = """
+    error
+"""
+addopts = ["-vv", "--strict-markers", "-rfE"]

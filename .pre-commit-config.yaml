@@ -7,11 +7,21 @@ repos:
     rev: v6.0.0
     hooks:
       # File names
-      - id: check-case-conflict # File formats
+      - id: check-case-conflict
+      # File formats
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      # Executables
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      # Git shenanigans
       - id: check-merge-conflict
       - id: check-added-large-files
+      # Python issues
       - id: check-ast
-      - id: debug-statements # Whitespace
+      - id: debug-statements
+      # Whitespace
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: mixed-line-ending
@@ -19,7 +29,7 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.12
     hooks:
-      - id: ruff-check
+      - id: ruff
         args: [ --fix, --unsafe-fixes, --show-fixes ]
       - id: ruff-format
 
@@ -32,7 +42,15 @@ repos:
     rev: 0.11.12
     hooks:
       - id: uv-lock
-  # - repo: https://github.com/DetachHead/basedpyright-prek-mirror
-  #   rev: 1.39.3
-  #   hooks:
-  #     - id: basedpyright
+
+  - repo: https://github.com/DetachHead/basedpyright-prek-mirror
+    rev: 1.39.5
+    hooks:
+      - id: basedpyright
+        args: [--verbose]
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.25.2
+    hooks:
+      - id: zizmor
+        args: ["--fix=all"]

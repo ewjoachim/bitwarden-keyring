@@ -14,22 +14,47 @@ dynamic = ["version"]
 description = "A Bitwarden backend for the keyring Python library"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE.md"]
 dependencies = [
     "keyring>=25.6.0",
     "typing-extensions>=4.15.0; python_version <= '3.10'",
 ]
 authors = [{ name = "Joachim Jablon", email = "ewjoachim@gmail.com" }]
+keywords = ["keyring", "bitwarden", "secrets"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ewjoachim/bitwarden-keyring"
+Repository = "https://github.com/ewjoachim/bitwarden-keyring"
+Issues = "https://github.com/ewjoachim/bitwarden-keyring/issues"
 
 [project.entry-points."keyring.backends"]
 bitwarden = "bitwarden_keyring"
 
 [dependency-groups]
-dev = ["pytest", "pytest-mock", "pytest-subprocess>=1.5.4", "ruff>=0.13.3"]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-subprocess>=1.5.4",
+    "ruff>=0.13.3",
+]
+types = ["basedpyright"]
+
+[tool.uv]
+default-groups = ["dev", "types"]
+exclude-newer = "5 days"
 
 [tool.basedpyright]
 include = ["bitwarden_keyring"]
@@ -92,4 +117,23 @@ testpaths = ["tests/"]
 filterwarnings = """
     error
 """
-addopts = ["-vv", "--strict-markers", "-rfE"]
+addopts = [
+    "-vv",
+    "--strict-markers",
+    "-rfE",
+    "--cov=bitwarden_keyring",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-branch",
+]
+
+[tool.coverage.run]
+relative_files = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "raise NotImplementedError",
+    "coverage: exclude",
+    "if TYPE_CHECKING:",
+    "[ ]+\\.\\.\\.$",
+]

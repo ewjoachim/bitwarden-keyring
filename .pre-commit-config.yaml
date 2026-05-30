@@ -27,10 +27,10 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.15
+    rev: v0.15.12
     hooks:
       - id: ruff
-        args: [ --fix, --unsafe-fixes, --show-fixes ]
+        args: [--fix, --unsafe-fixes, --show-fixes]
       - id: ruff-format
 
   - repo: https://github.com/ewjoachim/sync-pre-commit-with-uv
@@ -53,4 +53,4 @@ repos:
     rev: v1.25.2
     hooks:
       - id: zizmor
-        args: ["--fix=all"]
+        args: [--fix=all]

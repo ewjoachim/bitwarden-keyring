@@ -60,7 +60,7 @@ The Python packaging ecosystem can be quite a mess.
 
 [<img title="XKCD 1987: Python Environment. The Python environmental protection agency wants to seal it in a cement chamber, with pictorial messages to future civilizations warning them about the danger of using sudo to install random Python packages." src="https://imgs.xkcd.com/comics/python_environment_2x.png" width="400">](https://xkcd.com/1987/)
 
-Because of this, it's likely that your setup and my setup are nothing alike. Keyring [supports](https://pypi.org/project/keyring/#config-file-content) a configuration file with an option allowing to explicitely define the path to a backend. You may need that for your installation, or maybe not.
+Because of this, it's likely that your setup and my setup are nothing alike. Keyring [supports](https://pypi.org/project/keyring/#config-file-content) a configuration file with an option allowing to explicitly define the path to a backend. You may need that for your installation, or maybe not.
 
 ## Usage
 

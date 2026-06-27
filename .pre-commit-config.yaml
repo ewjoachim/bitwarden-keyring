@@ -27,7 +27,7 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.16
+    rev: v0.15.20
     hooks:
       - id: ruff
         args: [--fix, --unsafe-fixes, --show-fixes]
@@ -39,18 +39,18 @@ repos:
       - id: sync
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.11.21
+    rev: 0.11.24
     hooks:
       - id: uv-lock
 
   - repo: https://github.com/DetachHead/basedpyright-prek-mirror
-    rev: 1.39.7
+    rev: 1.39.8
     hooks:
       - id: basedpyright
         args: [--verbose]
 
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.25.2
+    rev: v1.26.1
     hooks:
       - id: zizmor
         args: [--fix=all]

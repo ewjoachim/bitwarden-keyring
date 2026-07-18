@@ -16,7 +16,7 @@ def del_env(monkeypatch):
 @pytest.fixture
 def cred():
     def f(
-        id: str = "id",  # noqa: A002
+        id: str = "id",  # ruff:ignore[builtin-argument-shadowing]
         name: str | None = None,
         username: str = "user",
         password: str = "password",

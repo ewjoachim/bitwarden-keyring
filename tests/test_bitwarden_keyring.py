@@ -257,7 +257,7 @@ def test_bitwarden_backend_prio_not_installed(mocker):
         "bitwarden_keyring.backend.bitwarden_cli_installed", return_value=False
     )
     with pytest.raises(RuntimeError):
-        backend.BitwardenBackend.priority  # noqa: B018
+        backend.BitwardenBackend.priority  # ruff:ignore[useless-expression]
 
 
 def test_bitwarden_backend_prio_installed(mocker):

@@ -1,10 +1,5 @@
-ci:
-  autoupdate_schedule: quarterly
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+  - repo: builtin
     hooks:
       # File names
       - id: check-case-conflict
@@ -18,39 +13,46 @@ repos:
       # Git shenanigans
       - id: check-merge-conflict
       - id: check-added-large-files
-      # Python issues
-      - id: check-ast
-      - id: debug-statements
       # Whitespace
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: mixed-line-ending
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.0
+  - repo: local
     hooks:
-      - id: ruff
-        args: [--fix, --unsafe-fixes, --show-fixes]
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --group dev ruff check --force-exclude --fix --unsafe-fixes --show-fixes
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
       - id: ruff-format
+        name: ruff format
+        entry: uv run --group dev ruff format --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
 
-  - repo: https://github.com/ewjoachim/sync-pre-commit-with-uv
-    rev: 1.1.0
-    hooks:
-      - id: sync
-
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.12.1
-    hooks:
       - id: uv-lock
+        name: uv-lock
+        entry: uv lock
+        language: system
+        files: ^(uv\.lock|pyproject\.toml|uv\.toml)$
+        pass_filenames: false
 
-  - repo: https://github.com/DetachHead/basedpyright-prek-mirror
-    rev: 1.39.9
-    hooks:
       - id: basedpyright
-        args: [--verbose]
+        name: basedpyright
+        entry: uv run --all-groups basedpyright
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
 
-  - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.28.0
-    hooks:
+      # zizmor is not a project dependency, so run it as a one-off tool.
       - id: zizmor
-        args: [--fix=all]
+        name: zizmor
+        entry: uvx zizmor@1.28.0 --no-progress --fix=all
+        language: system
+        types: [yaml]
+        files: (\.github/(workflows/.*|dependabot\.ya?ml))|(action\.ya?ml)$
+        require_serial: true

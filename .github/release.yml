@@ -1,6 +1,5 @@
 changelog:
   exclude:
     authors:
-      - pre-commit-ci
       - renovate
       - dependabot

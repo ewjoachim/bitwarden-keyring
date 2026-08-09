@@ -49,6 +49,7 @@ dev = [
     "pytest-mock",
     "pytest-subprocess>=1.5.4",
     "ruff>=0.13.3",
+    "prek",
 ]
 types = ["basedpyright"]
 

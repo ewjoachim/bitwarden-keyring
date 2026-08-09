@@ -8,6 +8,9 @@ on:
     tags:
       - "*"
 
+env:
+  UV_FROZEN: "true"
+
 permissions:
   contents: read
 

@@ -1,5 +1,6 @@
 changelog:
   exclude:
     authors:
-      - renovate
-      - dependabot
+      - renovate[bot]
+      - dependabot[bot]
+      - pre-commit-ci[bot]

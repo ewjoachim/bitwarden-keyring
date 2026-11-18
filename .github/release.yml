@@ -3,4 +3,3 @@ changelog:
     authors:
       - renovate[bot]
       - dependabot[bot]
-      - pre-commit-ci[bot]

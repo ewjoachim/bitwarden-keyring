@@ -5,8 +5,8 @@
 | Name                               |    Stmts |     Miss |   Branch |   BrPart |    Cover |   Missing |
 |----------------------------------- | -------: | -------: | -------: | -------: | -------: | --------: |
 | bitwarden\_keyring/\_\_init\_\_.py |        2 |        0 |        0 |        0 |     100% |           |
-| bitwarden\_keyring/backend.py      |      141 |        0 |       22 |        0 |     100% |           |
-| **TOTAL**                          |  **143** |    **0** |   **22** |    **0** | **100%** |           |
+| bitwarden\_keyring/backend.py      |      137 |        0 |       20 |        0 |     100% |           |
+| **TOTAL**                          |  **139** |    **0** |   **20** |    **0** | **100%** |           |
 
 
 ## Setup coverage badge

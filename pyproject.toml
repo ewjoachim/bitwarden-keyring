@@ -13,12 +13,11 @@ name = "bitwarden-keyring"
 dynamic = ["version"]
 description = "A Bitwarden backend for the keyring Python library"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE.md"]
 dependencies = [
     "keyring>=25.6.0",
-    "typing-extensions>=4.15.0; python_version <= '3.10'",
 ]
 authors = [{ name = "Joachim Jablon", email = "ewjoachim@gmail.com" }]
 keywords = ["keyring", "bitwarden", "secrets"]
@@ -27,7 +26,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",

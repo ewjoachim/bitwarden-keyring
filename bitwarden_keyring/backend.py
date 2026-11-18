@@ -3,17 +3,11 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 from collections.abc import Iterable, Mapping
-from typing import Any, Protocol, TypedDict, cast
+from typing import Any, NotRequired, Protocol, TypedDict, cast
 
 from jaraco.classes import properties
 from keyring import backend
-
-if sys.version_info >= (3, 11):
-    from typing import NotRequired
-else:
-    from typing_extensions import NotRequired
 
 PRIORITY = 10.0  # Doc is oddly vague
 BW_CLI = "bw"
